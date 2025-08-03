@@ -9,14 +9,17 @@ from app.utils import logger
 
 # User CRUD operations
 async def get_user_by_email(db: AsyncSession, email: str) -> Optional[models.User]:
+    """Get user by email address"""
     result = await db.execute(select(models.User).where(models.User.email == email))
     return result.scalars().first()
 
 async def get_user_by_id(db: AsyncSession, user_id: int) -> Optional[models.User]:
+    """Get user by ID"""
     result = await db.execute(select(models.User).where(models.User.id == user_id))
     return result.scalars().first()
 
 async def create_user(db: AsyncSession, user_create: schemas.UserCreate) -> models.User:
+    """Create new user with hashed password"""
     hashed_password = get_password_hash(user_create.password)
     db_user = models.User(email=user_create.email, hashed_password=hashed_password)
     db.add(db_user)
@@ -26,6 +29,7 @@ async def create_user(db: AsyncSession, user_create: schemas.UserCreate) -> mode
     return db_user
 
 async def update_user(db: AsyncSession, user_id: int, user_update: schemas.UserUpdate) -> Optional[models.User]:
+    """Update user information"""
     user = await get_user_by_id(db, user_id)
     if not user:
         return None
@@ -40,6 +44,7 @@ async def update_user(db: AsyncSession, user_id: int, user_update: schemas.UserU
 
 # Post CRUD operations
 async def create_post(db: AsyncSession, post_create: schemas.PostCreate, author_id: int) -> models.Post:
+    """Create new post"""
     db_post = models.Post(**post_create.dict(), author_id=author_id)
     db.add(db_post)
     await db.commit()
@@ -48,6 +53,7 @@ async def create_post(db: AsyncSession, post_create: schemas.PostCreate, author_
     return db_post
 
 async def get_post_by_id(db: AsyncSession, post_id: int) -> Optional[models.Post]:
+    """Get post by ID"""
     result = await db.execute(select(models.Post).where(models.Post.id == post_id))
     return result.scalars().first()
 
@@ -57,6 +63,7 @@ async def get_posts(
     limit: int = 10,
     author_id: Optional[int] = None
 ) -> List[models.Post]:
+    """Get posts with optional filtering by author"""
     query = select(models.Post)
     if author_id:
         query = query.where(models.Post.author_id == author_id)
@@ -65,6 +72,7 @@ async def get_posts(
     return result.scalars().all()
 
 async def update_post(db: AsyncSession, post_id: int, post_update: schemas.PostUpdate, user_id: int) -> Optional[models.Post]:
+    """Update post (only by author)"""
     post = await get_post_by_id(db, post_id)
     if not post or post.author_id != user_id:
         return None
@@ -78,6 +86,7 @@ async def update_post(db: AsyncSession, post_id: int, post_update: schemas.PostU
     return post
 
 async def delete_post(db: AsyncSession, post_id: int, user_id: int) -> bool:
+    """Delete post (only by author)"""
     post = await get_post_by_id(db, post_id)
     if not post or post.author_id != user_id:
         return False
@@ -89,6 +98,7 @@ async def delete_post(db: AsyncSession, post_id: int, user_id: int) -> bool:
 
 # Comment CRUD operations
 async def create_comment(db: AsyncSession, comment_create: schemas.CommentCreate, author_id: int, post_id: int) -> models.Comment:
+    """Create new comment"""
     db_comment = models.Comment(**comment_create.dict(), author_id=author_id, post_id=post_id)
     db.add(db_comment)
     await db.commit()
@@ -97,6 +107,7 @@ async def create_comment(db: AsyncSession, comment_create: schemas.CommentCreate
     return db_comment
 
 async def get_comment_by_id(db: AsyncSession, comment_id: int) -> Optional[models.Comment]:
+    """Get comment by ID"""
     result = await db.execute(select(models.Comment).where(models.Comment.id == comment_id))
     return result.scalars().first()
 
@@ -107,6 +118,7 @@ async def get_comments_by_post(
     limit: int = 50,
     include_blocked: bool = False
 ) -> List[models.Comment]:
+    """Get comments for a post with optional blocked comments"""
     query = select(models.Comment).where(models.Comment.post_id == post_id)
     if not include_blocked:
         query = query.where(models.Comment.is_blocked == False)
@@ -115,6 +127,7 @@ async def get_comments_by_post(
     return result.scalars().all()
 
 async def update_comment(db: AsyncSession, comment_id: int, comment_update: schemas.CommentUpdate, user_id: int) -> Optional[models.Comment]:
+    """Update comment (only by author)"""
     comment = await get_comment_by_id(db, comment_id)
     if not comment or comment.author_id != user_id:
         return None
@@ -128,6 +141,7 @@ async def update_comment(db: AsyncSession, comment_id: int, comment_update: sche
     return comment
 
 async def delete_comment(db: AsyncSession, comment_id: int, user_id: int) -> bool:
+    """Delete comment (only by author)"""
     comment = await get_comment_by_id(db, comment_id)
     if not comment or comment.author_id != user_id:
         return False
@@ -138,6 +152,7 @@ async def delete_comment(db: AsyncSession, comment_id: int, user_id: int) -> boo
     return True
 
 async def block_comment(db: AsyncSession, comment_id: int) -> Optional[models.Comment]:
+    """Block comment (admin function)"""
     comment = await get_comment_by_id(db, comment_id)
     if not comment:
         return None
@@ -154,7 +169,7 @@ async def get_comments_daily_breakdown(
     date_from: date, 
     date_to: date
 ) -> List[dict]:
-    """Отримання аналітики коментарів по днях"""
+    """Get daily breakdown of comments for analytics"""
     query = select(
         func.date(models.Comment.created_at).label('date'),
         func.count(models.Comment.id).label('total_comments'),

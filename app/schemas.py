@@ -111,13 +111,11 @@ class AnalyticsResponse(BaseModel):
     summary: dict
 
 
-# Error schemas
 class ErrorResponse(BaseModel):
     detail: str
     error_code: Optional[str] = None
 
 
-# Pagination schemas
 class PaginationParams(BaseModel):
     page: int = Field(1, ge=1)
     page_size: int = Field(10, ge=1, le=100)
