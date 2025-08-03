@@ -2,10 +2,11 @@ from sqlalchemy import Column, Integer, String, Text, Boolean, ForeignKey, DateT
 from sqlalchemy.orm import relationship
 from datetime import datetime
 
-from app.database import Base  # імпорт твоєї декларативної бази
+from app.database import Base
 
 
 class User(Base):
+    """User model for authentication and user management"""
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -14,11 +15,13 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    # Relationships
     posts = relationship("Post", back_populates="author", cascade="all, delete-orphan")
     comments = relationship("Comment", back_populates="author", cascade="all, delete-orphan")
 
 
 class Post(Base):
+    """Post model for blog posts with auto-reply functionality"""
     __tablename__ = "posts"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -27,13 +30,15 @@ class Post(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     auto_reply_enabled = Column(Boolean, default=False)
-    auto_reply_delay = Column(Integer, default=60)  # секунди
+    auto_reply_delay = Column(Integer, default=60)  # seconds
 
+    # Relationships
     author = relationship("User", back_populates="posts")
     comments = relationship("Comment", back_populates="post", cascade="all, delete-orphan")
 
 
 class Comment(Base):
+    """Comment model with moderation capabilities"""
     __tablename__ = "comments"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -43,5 +48,6 @@ class Comment(Base):
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     post_id = Column(Integer, ForeignKey("posts.id"), nullable=False)
 
+    # Relationships
     author = relationship("User", back_populates="comments")
     post = relationship("Post", back_populates="comments")
