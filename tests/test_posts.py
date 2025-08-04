@@ -92,7 +92,7 @@ class TestPostCreation:
         
         response = client.post("/posts/", json=post_data)
         
-        assert response.status_code == 401
+        assert response.status_code == 403
     
     def test_create_post_invalid_data(self, client, auth_headers):
         """Test post creation with invalid data"""

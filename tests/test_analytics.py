@@ -2,7 +2,7 @@ import pytest
 from datetime import date, datetime, timedelta
 from fastapi.testclient import TestClient
 from app.models import Comment, Post, User
-from app.utils import get_password_hash
+from app.auth import get_password_hash
 
 
 class TestAnalytics:
