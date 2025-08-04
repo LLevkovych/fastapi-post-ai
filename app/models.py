@@ -45,6 +45,7 @@ class Comment(Base):
     content = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     is_blocked = Column(Boolean, default=False)
+    is_auto_reply = Column(Boolean, default=False)  # Mark auto-reply comments
     author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     post_id = Column(Integer, ForeignKey("posts.id"), nullable=False)
 

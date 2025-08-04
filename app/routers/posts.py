@@ -5,6 +5,7 @@ from app.schemas import PostCreate, PostRead, PostUpdate, PostList, PaginationPa
 from app.database import get_db
 from app import crud, auth
 from app.utils import logger, paginate_results
+from app.services import content_moderation
 
 router = APIRouter(prefix="/posts", tags=["posts"])
 
@@ -45,9 +46,27 @@ async def create_post(
     current_user = Depends(auth.get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Create new post"""
+    """Create new post with AI moderation"""
+    # Moderate post content using AI
+    moderation_result = await content_moderation.moderate_content(
+        f"{post_create.title} {post_create.content}", "post"
+    )
+    
+    # Check if content is appropriate
+    if not moderation_result["is_appropriate"]:
+        logger.warning(f"Post blocked due to inappropriate content: {moderation_result}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "message": "Post contains inappropriate content",
+                "issues": moderation_result.get("issues", []),
+                "severity": moderation_result.get("severity", "medium")
+            }
+        )
+    
+    # Create post
     post = await crud.create_post(db, post_create, current_user.id)
-    logger.info(f"User {current_user.id} created post: {post.title}")
+    logger.info(f"User {current_user.id} created post: {post.title} (moderated)")
     return post
 
 
