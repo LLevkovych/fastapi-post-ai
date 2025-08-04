@@ -5,6 +5,8 @@ from app.schemas import CommentCreate, CommentRead, CommentUpdate, CommentList
 from app.database import get_db
 from app import crud, auth
 from app.utils import logger, paginate_results
+from app.services import content_moderation
+from app.background import schedule_auto_reply
 
 router = APIRouter(prefix="/posts/{post_id}/comments", tags=["comments"])
 
@@ -60,7 +62,7 @@ async def create_comment(
     current_user = Depends(auth.get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Create new comment"""
+    """Create new comment with AI moderation"""
     # Check if post exists
     post = await crud.get_post_by_id(db, post_id)
     if not post:
@@ -69,13 +71,43 @@ async def create_comment(
             detail="Post not found"
         )
     
-    # Create comment
-    comment = await crud.create_comment(db, comment_create, current_user.id, post_id)
+    # Moderate content using AI
+    moderation_result = await content_moderation.moderate_content(
+        comment_create.content, "comment"
+    )
+    
+    # Check if content is appropriate
+    if not moderation_result["is_appropriate"]:
+        logger.warning(f"Comment blocked due to inappropriate content: {moderation_result}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "message": "Comment contains inappropriate content",
+                "issues": moderation_result.get("issues", []),
+                "severity": moderation_result.get("severity", "medium")
+            }
+        )
+    
+    # Create comment with moderation info
+    comment_data = comment_create.dict()
+    comment_data["is_blocked"] = False  # Content passed moderation
+    
+    comment = await crud.create_comment(db, comment_data, current_user.id, post_id)
     
     # Add author email
     comment.author_email = current_user.email
     
-    logger.info(f"User {current_user.id} created comment on post {post_id}")
+    # Schedule auto-reply if enabled for this post
+    if post.auto_reply_enabled and not comment.is_blocked:
+        task_id = schedule_auto_reply(
+            comment_id=comment.id,
+            post_id=post_id,
+            delay_seconds=post.auto_reply_delay
+        )
+        if task_id:
+            logger.info(f"Auto-reply scheduled for comment {comment.id}, task ID: {task_id}")
+    
+    logger.info(f"User {current_user.id} created comment on post {post_id} (moderated)")
     return comment
 
 
