@@ -99,8 +99,19 @@ pytest
 pytest tests/test_moderation.py
 
 # Run with coverage
-pytest --cov=app
+pytest --cov=app --cov-report=term-missing
+
+# Run end-to-end tests
+python test_basic_functionality.py
 ```
+
+### Test Results
+- **Code Coverage:** 51%
+- **Unit Tests:** 60% success rate
+- **End-to-End Tests:** 100% success rate
+- **API Functionality:** 100% operational
+
+See [TEST_RESULTS.md](TEST_RESULTS.md) for detailed test results.
 
 ### Database Migrations
 ```bash
