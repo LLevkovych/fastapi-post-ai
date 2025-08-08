@@ -1,55 +1,31 @@
-import os
-from typing import Optional, List
 from pydantic_settings import BaseSettings
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
-
+from typing import Optional
 
 class Settings(BaseSettings):
-    """Application settings loaded from environment variables"""
-    
-    # Database configuration
+    # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./test.db"
     
-    # JWT authentication settings
-    SECRET_KEY: str = "your-secret-key-change-in-production"
+    # JWT
+    SECRET_KEY: str = "your-secret-key-here"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
-    # AI API keys for content moderation and auto-reply
+    # AI Services
     GOOGLE_AI_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
     
-    # Redis configuration for background tasks
-    REDIS_URL: str = "redis://localhost:6379"
-    
-    # Content moderation settings
+    # Moderation
     MODERATION_ENABLED: bool = True
-    AUTO_BLOCK_ENABLED: bool = True
     
-    # Auto-reply settings
-    AUTO_REPLY_ENABLED: bool = True
+    # Auto-reply
     DEFAULT_AUTO_REPLY_DELAY: int = 60  # seconds
     
-    # Logging configuration
-    LOG_LEVEL: str = "INFO"
-    LOG_FILE: str = "app.log"
-    
-    # CORS settings for frontend integration
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8080"]
-    
-    # Application settings
-    APP_NAME: str = "FastPostAI"
-    DEBUG: bool = False
+    # CORS
+    CORS_ORIGINS: list = ["*"]
     
     class Config:
         env_file = ".env"
-        case_sensitive = True
-        env_file_encoding = "utf-8"
+        extra = "ignore"
 
-
-# Global settings instance
-settings = Settings()
+settings = Settings() 
