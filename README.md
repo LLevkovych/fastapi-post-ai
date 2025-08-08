@@ -111,7 +111,6 @@ python test_basic_functionality.py
 - **End-to-End Tests:** 100% success rate
 - **API Functionality:** 100% operational
 
-See [TEST_RESULTS.md](TEST_RESULTS.md) for detailed test results.
 
 ### Database Migrations
 ```bash
